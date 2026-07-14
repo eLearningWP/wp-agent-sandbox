@@ -14,7 +14,17 @@ This is a public source repository. The package remains marked private in `packa
 - Docker Desktop or Docker Engine for the `wp-env` provider.
 - Composer or any other host tools declared by the consuming project's preparation steps.
 
-## Install locally
+## Install
+
+Install directly from the public GitHub repository:
+
+```sh
+npm install --global github:eLearningWP/wp-agent-sandbox
+```
+
+For a consuming project, prefer pinning an exact commit as a development dependency and exposing project-specific npm aliases.
+
+For local engine development:
 
 ```sh
 npm install
@@ -34,6 +44,8 @@ wp-agent-sandbox destroy
 ```
 
 All commands are headless by default. The returned URL can be opened in a headed browser or used by Playwright/Chromium in headless mode.
+
+The CLI never runs automatically on workspace startup, checkout, or dependency installation. A provider environment is created only when `wp-agent-sandbox up` is explicitly invoked.
 
 The same manifest can declare installed plugins/themes, pinned WordPress and PHP versions, preparation commands, seed scripts, verification commands, demo content, users, options, and plugin-owned database state. The project owns that profile data; this repository owns only the portable lifecycle engine.
 
