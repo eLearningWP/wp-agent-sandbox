@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { parseArguments } from './arguments.js';
 import { loadConfig, resolveProfile } from './config.js';
+import { withFileLock } from './lock.js';
 import { prepareProject } from './prepare.js';
 import { sandboxId, statePaths } from './state.js';
 import { wpEnvProvider } from './providers/wp-env.js';
@@ -13,7 +14,29 @@ const PROVIDERS = {
 };
 
 function help() {
-	return `wp-agent-sandbox <command> [options]\n\nCommands:\n  up         Prepare and start the selected sandbox\n  status     Show normalized sandbox state\n  wp         Proxy WP-CLI arguments (wp-env only; pass after --)\n  verify     Run the selected profile's verification\n  logs       Show provider logs\n  reset      Reset data and reapply the selected profile\n  stop       Stop the sandbox but retain its data\n  destroy    Remove only this worktree's sandbox state\n  check      Validate configuration and profile inheritance\n\nOptions:\n  --config <path>       Explicit configuration file\n  --provider <name>     wp-env or playground\n  --profile <name>      Profile from the project manifest\n  --port <number>       Starting HTTP port\n  --prepare <group>     Run an optional preparation group (repeatable)\n  --json                Emit machine-readable output\n`;
+	return `wp-agent-sandbox <command> [options]\n\nCommands:\n  prepare    Prepare the worktree without starting WordPress\n  up         Prepare and start the selected sandbox\n  status     Show normalized sandbox state\n  wp         Proxy WP-CLI arguments (wp-env only; pass after --)\n  verify     Run the selected profile's verification\n  logs       Show provider logs\n  reset      Reset data and reapply the selected profile\n  stop       Stop the sandbox but retain its data\n  destroy    Remove only this worktree's sandbox state\n  check      Validate configuration and profile inheritance\n\nOptions:\n  --config <path>       Explicit configuration file\n  --provider <name>     wp-env or playground\n  --profile <name>      Profile from the project manifest\n  --port <number>       Starting HTTP port\n  --prepare <group>     Run an optional preparation group (repeatable)\n  --force               Rerun preparation even when outputs exist\n  --json                Emit machine-readable output\n`;
+}
+
+function printPreparation( context, report, json ) {
+	const result = {
+		status: 'prepared',
+		worktree: context.projectRoot,
+		ran: report.ran,
+		skipped: report.skipped,
+	};
+	if ( json ) {
+		process.stdout.write( `${ JSON.stringify( result, null, 2 ) }\n` );
+		return;
+	}
+	process.stdout.write( `Preparation complete (${ report.ran.length } ran, ${ report.skipped.length } skipped).\n` );
+}
+
+function preparationOptions( options ) {
+	return {
+		force: options.force,
+		groups: options.prepare,
+		quiet: options.json,
+	};
 }
 
 function printStatus( status, json ) {
@@ -74,9 +97,20 @@ export async function main( argv = process.argv.slice( 2 ), cwd = process.cwd() 
 				worktree: context.projectRoot,
 			}, options.json );
 			break;
+		case 'prepare': {
+			const report = await withFileLock(
+				context.paths.lock,
+				() => prepareProject( context.config, context.projectRoot, preparationOptions( options ) )
+			);
+			printPreparation( context, report, options.json );
+			break;
+		}
 		case 'up': {
-			await prepareProject( context.config, context.projectRoot, options.prepare );
-			printStatus( await context.provider.up( context ), options.json );
+			const status = await withFileLock( context.paths.lock, async () => {
+				await prepareProject( context.config, context.projectRoot, preparationOptions( options ) );
+				return context.provider.up( context );
+			} );
+			printStatus( status, options.json );
 			break;
 		}
 		case 'status':
@@ -93,14 +127,14 @@ export async function main( argv = process.argv.slice( 2 ), cwd = process.cwd() 
 			await context.provider.logs( context );
 			break;
 		case 'reset':
-			printStatus( await context.provider.reset( context ), options.json );
+			printStatus( await withFileLock( context.paths.lock, () => context.provider.reset( context ) ), options.json );
 			break;
 		case 'stop':
-			await context.provider.stop( context );
+			await withFileLock( context.paths.lock, () => context.provider.stop( context ) );
 			printStatus( await context.provider.status( context ), options.json );
 			break;
 		case 'destroy':
-			await context.provider.destroy( context );
+			await withFileLock( context.paths.lock, () => context.provider.destroy( context ) );
 			printStatus( null, options.json );
 			break;
 		default:

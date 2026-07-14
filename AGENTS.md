@@ -7,8 +7,10 @@ This repository provides reusable WordPress sandbox orchestration. Keep provider
 - Worktree isolation is the primary contract: never attach to or mutate an unrelated WordPress installation.
 - Docker `wp-env` with MariaDB is authoritative. Playground is an optional quick provider and must not be represented as MySQL-equivalent.
 - All lifecycle commands must work without a graphical desktop and expose machine-readable status.
+- Preparation must remain independently invokable and must never imply provider startup.
 - Use argument-array process spawning; do not pass project configuration through a shell.
 - State is disposable and keyed by canonical project path. Cleanup must affect only the selected sandbox.
+- Serialize worktree mutations and replace state atomically so hooks and parallel agents cannot race.
 - Keep the dependency surface small and pin provider packages exactly.
 
 ## Verification
