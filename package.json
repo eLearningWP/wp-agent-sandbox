@@ -1,0 +1,29 @@
+{
+  "name": "wp-agent-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Worktree-isolated WordPress sandboxes for coding agents and humans.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eLearningWP/wp-agent-sandbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eLearningWP/wp-agent-sandbox/issues"
+  },
+  "homepage": "https://github.com/eLearningWP/wp-agent-sandbox#readme",
+  "type": "module",
+  "bin": {
+    "wp-agent-sandbox": "bin/wp-agent-sandbox.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check bin/wp-agent-sandbox.js && node --check src/*.js && node --check src/providers/*.js"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "dependencies": {
+    "@wordpress/env": "11.10.0",
+    "@wp-playground/cli": "3.1.44"
+  }
+}

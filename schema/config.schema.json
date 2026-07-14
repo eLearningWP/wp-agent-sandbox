@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/eLearningWP/wp-agent-sandbox/main/schema/config.schema.json",
+  "title": "WP Agent Sandbox configuration",
+  "type": "object",
+  "required": ["name", "project", "wordpress", "profiles"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "project": {
+      "type": "object",
+      "required": ["slug", "entrypoint"],
+      "properties": {
+        "type": { "enum": ["plugin"] },
+        "slug": { "type": "string", "minLength": 1 },
+        "entrypoint": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "provider": { "enum": ["wp-env", "playground"] },
+        "profile": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1024, "maximum": 65535 }
+      },
+      "additionalProperties": false
+    },
+    "wordpress": {
+      "type": "object",
+      "required": ["version", "phpVersion"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "phpVersion": { "type": "string", "minLength": 1 },
+        "multisite": { "type": "boolean" },
+        "config": { "type": "object" },
+        "plugins": { "type": "array", "items": { "type": "string" } },
+        "themes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "prepare": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "command"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "command": { "$ref": "#/$defs/command" },
+          "optional": { "type": "boolean" },
+          "unlessPathExists": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/profile" }
+    }
+  },
+  "$defs": {
+    "command": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "extends": { "type": "array", "items": { "type": "string" } },
+        "wpEnv": {
+          "type": "object",
+          "properties": {
+            "seed": { "type": "array", "items": { "$ref": "#/$defs/command" } },
+            "verify": { "type": "array", "items": { "$ref": "#/$defs/command" } }
+          },
+          "additionalProperties": false
+        },
+        "playground": {
+          "type": "object",
+          "properties": {
+            "blueprint": { "type": "string" },
+            "httpChecks": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "subsites": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
