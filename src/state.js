@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -19,11 +19,13 @@ export function sandboxId( name, projectRoot ) {
 }
 
 export function statePaths( name, projectRoot, provider ) {
-	const root = path.join( sandboxHome(), sandboxId( name, projectRoot ), provider );
+	const base = path.join( sandboxHome(), sandboxId( name, projectRoot ) );
+	const root = path.join( base, provider );
 	return {
 		root,
 		manifest: path.join( root, 'state.json' ),
 		log: path.join( root, `${ provider }.log` ),
+		lock: path.join( base, 'operation.lock' ),
 	};
 }
 
@@ -44,7 +46,13 @@ export async function readState( paths ) {
 
 export async function writeState( paths, state ) {
 	await ensureStateDirectory( paths );
-	await writeFile( paths.manifest, `${ JSON.stringify( state, null, 2 ) }\n`, 'utf8' );
+	const temporary = `${ paths.manifest }.${ process.pid }.${ randomUUID() }.tmp`;
+	try {
+		await writeFile( temporary, `${ JSON.stringify( state, null, 2 ) }\n`, 'utf8' );
+		await rename( temporary, paths.manifest );
+	} finally {
+		await rm( temporary, { force: true } );
+	}
 }
 
 export async function removeState( paths ) {

@@ -1,9 +1,10 @@
 const VALUE_OPTIONS = new Set( [ 'config', 'port', 'prepare', 'profile', 'provider' ] );
-const BOOLEAN_OPTIONS = new Set( [ 'json' ] );
+const BOOLEAN_OPTIONS = new Set( [ 'force', 'json' ] );
 
 export function parseArguments( argv ) {
 	const command = argv[ 0 ] ?? 'help';
 	const options = {
+		force: false,
 		json: false,
 		prepare: [],
 	};
