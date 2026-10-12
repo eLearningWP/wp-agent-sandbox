@@ -49,7 +49,7 @@ All commands are headless by default. The returned URL can be opened in a headed
 
 The CLI never runs automatically on workspace startup, checkout, or dependency installation. `prepare` only runs host commands declared by the project; a provider environment is created only when `wp-agent-sandbox up` is explicitly invoked.
 
-The same manifest can declare installed plugins/themes, pinned WordPress and PHP versions, preparation commands, seed scripts, verification commands, demo content, users, options, and plugin-owned database state. The project owns that profile data; this repository owns only the portable lifecycle engine.
+The same manifest can declare installed plugins/themes, WordPress and PHP versions, preparation commands, seed scripts, verification commands, demo content, users, options, and plugin-owned database state. The project owns that profile data; this repository owns only the portable lifecycle engine.
 
 ## Provider roles
 
@@ -76,7 +76,7 @@ Place `wp-agent-sandbox.config.json` at the consuming project root. The CLI disc
     "port": 8888
   },
   "wordpress": {
-    "version": "7.0",
+    "version": "latest",
     "phpVersion": "8.3",
     "multisite": true
   },
@@ -101,6 +101,8 @@ Place `wp-agent-sandbox.config.json` at the consuming project root. The CLI disc
   }
 }
 ```
+
+`wordpress.version` is optional and defaults to `"latest"`, which installs the newest stable WordPress release in both providers (wp-env `core: null`, Playground `--wp=latest`). Default to the latest release; pin a version such as `"6.8"` (a `WordPress/WordPress` Git tag for wp-env) only when a task requires testing a specific release. `wordpress.phpVersion` is also optional and defaults to `"8.3"`. `wp-agent-sandbox check` reports the resolved WordPress and PHP versions.
 
 Preparation entries marked `"optional": true` run only when selected with `--prepare <id>`. Profiles can compose other profiles with `"extends": ["minimal"]`. Seed commands are ordinary WP-CLI argument arrays, so they can run idempotent project-owned PHP scripts that create plugin tables, options, users, settings, and demo content.
 
