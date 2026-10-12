@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { normalizeStatus } from '../src/providers/wp-env.js';
+import { normalizeStatus, wpEnvCore } from '../src/providers/wp-env.js';
 
 test( 'normalizes wp-env JSON status for agents', () => {
 	const status = normalizeStatus(
@@ -28,4 +28,10 @@ test( 'normalizes wp-env JSON status for agents', () => {
 		'http://localhost:9012/beta/',
 	] );
 	assert.equal( status.wpEnv.runtime, 'docker' );
+} );
+
+test( 'maps latest WordPress to the wp-env default core and pins explicit versions', () => {
+	assert.equal( wpEnvCore( 'latest' ), null );
+	assert.equal( wpEnvCore( undefined ), null );
+	assert.equal( wpEnvCore( '6.8' ), 'WordPress/WordPress#6.8' );
 } );

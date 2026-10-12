@@ -27,10 +27,19 @@
     },
     "wordpress": {
       "type": "object",
-      "required": ["version", "phpVersion"],
       "properties": {
-        "version": { "type": "string", "minLength": 1 },
-        "phpVersion": { "type": "string", "minLength": 1 },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "default": "latest",
+          "description": "WordPress version. \"latest\" (the default when omitted) installs the newest stable release; pin a version such as \"6.8\" only when a specific release must be tested."
+        },
+        "phpVersion": {
+          "type": "string",
+          "minLength": 1,
+          "default": "8.3",
+          "description": "PHP version. Defaults to 8.3 when omitted."
+        },
         "multisite": { "type": "boolean" },
         "config": { "type": "object" },
         "plugins": { "type": "array", "items": { "type": "string" } },

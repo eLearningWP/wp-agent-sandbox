@@ -88,15 +88,25 @@ export async function main( argv = process.argv.slice( 2 ), cwd = process.cwd() 
 	const context = contextFrom( await loadConfig( cwd, options.config ), options );
 
 	switch ( command ) {
-		case 'check':
-			printStatus( {
+		case 'check': {
+			const result = {
 				status: 'valid',
 				config: path.relative( context.projectRoot, context.configPath ) || path.basename( context.configPath ),
 				provider: context.providerName,
 				profile: context.profileName,
+				wordpress: {
+					version: context.config.wordpress.version,
+					phpVersion: context.config.wordpress.phpVersion,
+				},
 				worktree: context.projectRoot,
-			}, options.json );
+			};
+			if ( options.json ) {
+				process.stdout.write( `${ JSON.stringify( result, null, 2 ) }\n` );
+			} else {
+				process.stdout.write( `status: ${ result.status }\nconfig: ${ result.config }\nprovider: ${ result.provider }\nprofile: ${ result.profile }\nwordpress: ${ result.wordpress.version }\nphp: ${ result.wordpress.phpVersion }\nworktree: ${ result.worktree }\n` );
+			}
 			break;
+		}
 		case 'prepare': {
 			const report = await withFileLock(
 				context.paths.lock,

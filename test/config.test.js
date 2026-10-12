@@ -4,7 +4,13 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { CONFIG_FILENAME, loadConfig, resolveProfile } from '../src/config.js';
+import {
+	CONFIG_FILENAME,
+	DEFAULT_PHP_VERSION,
+	loadConfig,
+	normalizeConfig,
+	resolveProfile,
+} from '../src/config.js';
 
 const baseConfig = {
 	name: 'example',
@@ -68,4 +74,36 @@ test( 'rejects profile inheritance cycles', () => {
 		},
 	};
 	assert.throws( () => resolveProfile( config, 'one' ), /inheritance cycle/ );
+} );
+
+test( 'defaults WordPress to latest and PHP to the default version when omitted', async () => {
+	const directory = await mkdtemp( path.join( os.tmpdir(), 'wp-agent-sandbox-config-' ) );
+	try {
+		const config = { ...baseConfig, wordpress: { multisite: true } };
+		await writeFile( path.join( directory, CONFIG_FILENAME ), JSON.stringify( config ), 'utf8' );
+		const loaded = await loadConfig( directory );
+		assert.equal( loaded.config.wordpress.version, 'latest' );
+		assert.equal( loaded.config.wordpress.phpVersion, DEFAULT_PHP_VERSION );
+		assert.equal( loaded.config.wordpress.multisite, true );
+	} finally {
+		await rm( directory, { recursive: true, force: true } );
+	}
+} );
+
+test( 'accepts "latest" in any casing and keeps pinned versions', () => {
+	assert.equal( normalizeConfig( { wordpress: { version: 'Latest' } } ).wordpress.version, 'latest' );
+	assert.equal( normalizeConfig( { wordpress: { version: '6.8', phpVersion: '8.2' } } ).wordpress.version, '6.8' );
+	assert.equal( normalizeConfig( { wordpress: { version: '6.8', phpVersion: '8.2' } } ).wordpress.phpVersion, '8.2' );
+} );
+
+test( 'rejects empty explicit WordPress or PHP versions', async () => {
+	const directory = await mkdtemp( path.join( os.tmpdir(), 'wp-agent-sandbox-config-' ) );
+	try {
+		for ( const wordpress of [ { version: '' }, { phpVersion: ' ' }, { version: 7 } ] ) {
+			await writeFile( path.join( directory, CONFIG_FILENAME ), JSON.stringify( { ...baseConfig, wordpress } ), 'utf8' );
+			await assert.rejects( loadConfig( directory ), /must be a non-empty string/ );
+		}
+	} finally {
+		await rm( directory, { recursive: true, force: true } );
+	}
 } );

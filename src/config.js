@@ -3,6 +3,11 @@ import path from 'node:path';
 
 export const CONFIG_FILENAME = 'wp-agent-sandbox.config.json';
 
+// "latest" resolves to the newest stable WordPress release in every provider.
+export const LATEST_WORDPRESS = 'latest';
+export const DEFAULT_WORDPRESS_VERSION = LATEST_WORDPRESS;
+export const DEFAULT_PHP_VERSION = '8.3';
+
 async function exists( candidate ) {
 	try {
 		await access( candidate );
@@ -60,8 +65,12 @@ function validateConfig( config ) {
 	if ( ! config.wordpress || 'object' !== typeof config.wordpress ) {
 		throw new Error( 'wordpress is required.' );
 	}
-	assertString( config.wordpress.version, 'wordpress.version' );
-	assertString( config.wordpress.phpVersion, 'wordpress.phpVersion' );
+	if ( undefined !== config.wordpress.version ) {
+		assertString( config.wordpress.version, 'wordpress.version' );
+	}
+	if ( undefined !== config.wordpress.phpVersion ) {
+		assertString( config.wordpress.phpVersion, 'wordpress.phpVersion' );
+	}
 	if ( ! config.profiles || 0 === Object.keys( config.profiles ).length ) {
 		throw new Error( 'At least one profile is required.' );
 	}
@@ -79,6 +88,23 @@ function validateConfig( config ) {
 			validateCommand( command, `profiles.${ profileName }.wpEnv.verify[${ index }]` );
 		}
 	}
+}
+
+/**
+ * Fills optional WordPress settings with defaults. An omitted version (or any
+ * casing of "latest") becomes "latest"; explicit pinned versions are kept.
+ */
+export function normalizeConfig( config ) {
+	const wordpress = config.wordpress ?? {};
+	const version = wordpress.version?.trim() || DEFAULT_WORDPRESS_VERSION;
+	return {
+		...config,
+		wordpress: {
+			...wordpress,
+			version: LATEST_WORDPRESS === version.toLowerCase() ? LATEST_WORDPRESS : version,
+			phpVersion: wordpress.phpVersion?.trim() || DEFAULT_PHP_VERSION,
+		},
+	};
 }
 
 function mergeProfile( base, addition ) {
@@ -129,6 +155,7 @@ export async function loadConfig( cwd, explicitPath ) {
 		throw new Error( `Invalid JSON in ${ configPath }: ${ error.message }` );
 	}
 	validateConfig( config );
+	config = normalizeConfig( config );
 
 	const projectRoot = await realpath( path.dirname( configPath ) );
 	return { config, configPath, projectRoot };

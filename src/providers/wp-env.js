@@ -17,11 +17,21 @@ function generatedConfigPath( context ) {
 	return path.join( context.paths.root, 'wp-env.json' );
 }
 
+/**
+ * Maps the manifest WordPress version to wp-env's `core` source. `null` makes
+ * wp-env install the latest stable release; pinned versions use the matching
+ * WordPress/WordPress Git tag.
+ */
+export function wpEnvCore( version ) {
+	if ( ! version || 'latest' === version ) {
+		return null;
+	}
+	return `WordPress/WordPress#${ version }`;
+}
+
 async function writeGeneratedConfig( context ) {
 	const config = {
-		core: 'latest' === context.config.wordpress.version
-			? null
-			: `WordPress/WordPress#${ context.config.wordpress.version }`,
+		core: wpEnvCore( context.config.wordpress.version ),
 		phpVersion: context.config.wordpress.phpVersion,
 		multisite: Boolean( context.config.wordpress.multisite ),
 		plugins: context.config.wordpress.plugins ?? [],
